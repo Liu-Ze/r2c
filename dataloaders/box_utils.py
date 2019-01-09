@@ -13,11 +13,12 @@ import cv2
 def load_image(img_fn):
     """Load the specified image and return a [H,W,3] Numpy array.
     """
-    import ipdb
-    ipdb.set_trace()
+    print(img_fn)
     if 'zip@' in img_fn:
         im = phillyzip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
-    return im
+        return im
+    else:
+        return default_loader(img_fn)
     # # Load image
     # image = skimage.io.imread(img_fn)
     # # If grayscale. Convert to RGB for consistency.
