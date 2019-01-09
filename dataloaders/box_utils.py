@@ -6,8 +6,9 @@ import warnings
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import functional
 from config import USE_IMAGENET_PRETRAINED
-from . import  phillyzip
+from .phillyzip import PhillyZip
 import cv2
+from PIL import Image
 
 ##### Image
 def load_image(img_fn):
@@ -15,7 +16,8 @@ def load_image(img_fn):
     """
     print(img_fn)
     if 'zip@' in img_fn:
-        im = phillyzip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        im = PhillyZip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        print("img:", im)
         return im
     else:
         return default_loader(img_fn)

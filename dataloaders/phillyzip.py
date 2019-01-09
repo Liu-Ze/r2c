@@ -1,73 +1,87 @@
-# --------------------------------------------------------
-# Pose.gluon
-# Copyright (c) 2018 Microsoft
-# Licensed under The Apache-2.0 License [see LICENSE for details]
-# Written by Bin Xiao
-# --------------------------------------------------------
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
 import zipfile
+import os
+import io
+import time
+from PIL import Image
 
-import cv2
-import numpy as np
 
-_im_zfile = []
+class PhillyZip(object):
+    zip_bank = dict()
 
-def imread(filename, flags=cv2.IMREAD_COLOR):
-    global _im_zfile
-    path = filename
-    pos_at = path.index('@')
-    if pos_at == -1:
-        print("character '@' is not found from the given path '%s'"%(path))
-        assert 0
-    path_zip = path[0: pos_at]
-    path_img = path[pos_at + 1:]
-    if not os.path.isfile(path_zip):
-        print("zip file '%s' is not found"%(path_zip))
-        assert 0
-    for i in range(len(_im_zfile)):
-        if _im_zfile[i]['path'] == path_zip:
-            data = _im_zfile[i]['zipfile'].read(path_img)
-            return cv2.imdecode(np.frombuffer(data, np.uint8), flags)
+    def __init__(self):
+        super(PhillyZip, self).__init__()
 
-    print("read new image zip file '%s'"%(path_zip))
-    _im_zfile.append({
-        'path': path_zip,
-        'zipfile': zipfile.ZipFile(path_zip, 'r')
-    })
-    data = _im_zfile[-1]['zipfile'].read(path_img)
+    @staticmethod
+    def get_zipfile(path):
+        zip_bank = PhillyZip.zip_bank
+        if path in zip_bank:
+            return zip_bank[path]
+        else:
+            print("creating new zip_bank")
+            zfile = zipfile.ZipFile(path, 'r')
+            zip_bank[path] = zfile
+            return zip_bank[path]
 
-    return cv2.imdecode(np.frombuffer(data, np.uint8), flags)
+    @staticmethod
+    def split_zip_style_path(path):
+        # pos_at = path.index('@')
+        # find the last '@' in the path, instead of the first '@', since the first '@' may be philly auto-unzip folder
+        pos_at = len(path) - 1 - path[::-1].index('@')
+        if pos_at == len(path):
+            print("character '@' is not found from the given path '%s'" % (path))
+            assert 0
 
-import xml.etree.ElementTree as ET
+        zip_path = path[0: pos_at]
+        folder_path = path[pos_at + 1:]
+        folder_path = str.strip(folder_path, '/')
+        return zip_path, folder_path
 
-_xml_path_zip = []
-_xml_zfile = []
+    @staticmethod
+    def list_folder(path):
+        zip_path, folder_path = PhillyZip.split_zip_style_path(path)
 
-def xmlread(filename):
-    global _xml_path_zip
-    global _xml_zfile
-    path = filename
-    pos_at = path.index('@')
-    if pos_at == -1:
-        print("character '@' is not found from the given path '%s'"%(path))
-        assert 0
-    path_zip = path[0: pos_at]
-    path_xml = path[pos_at + 2:]
-    if not os.path.isfile(path_zip):
-        print("zip file '%s' is not found"%(path_zip))
-        assert 0
-    for i in xrange(len(_xml_path_zip)):
-        if _xml_path_zip[i] == path_zip:
-            data = _xml_zfile[i].open(path_xml)
-            return ET.fromstring(data.read())
-    _xml_path_zip.append(path_zip)
-    print("read new xml file '%s'"%(path_zip))
-    _xml_zfile.append(zipfile.ZipFile(path_zip, 'r'))
-    data = _xml_zfile[-1].open(path_xml)
-    return ET.fromstring(data.read())
+        zfile = PhillyZip.get_zipfile(zip_path)
+        folder_list = []
+        for file_foler_name in zfile.namelist():
+            file_foler_name = str.strip(file_foler_name, '/')
+            if file_foler_name.startswith(folder_path) and \
+               len(os.path.splitext(file_foler_name)[-1]) == 0 and \
+               file_foler_name != folder_path:
+                if len(folder_path) == 0:
+                    folder_list.append(file_foler_name)
+                else:
+                    folder_list.append(file_foler_name[len(folder_path)+1:])
+
+        return folder_list
+
+    @staticmethod
+    def list_files(path, extension=['.*']):
+        zip_path, folder_path = PhillyZip.split_zip_style_path(path)
+
+        zfile = PhillyZip.get_zipfile(zip_path)
+        file_lists = []
+        for file_foler_name in zfile.namelist():
+            file_foler_name = str.strip(file_foler_name, '/')
+            if file_foler_name.startswith(folder_path) and str.lower(os.path.splitext(file_foler_name)[-1]) in extension:
+                if len(folder_path) == 0:
+                    file_lists.append(file_foler_name)
+                else:
+                    file_lists.append(file_foler_name[len(folder_path)+1:])
+
+        return file_lists
+
+    @staticmethod
+    def imread(path):
+        zip_path, path_img = PhillyZip.split_zip_style_path(path)
+        zfile = PhillyZip.get_zipfile(zip_path)
+        data = zfile.read(path_img)
+        im = Image.open(io.BytesIO(data))
+        return im
+
+    @staticmethod
+    def read(path):
+        zip_path, path_img = PhillyZip.split_zip_style_path(path)
+        zfile = PhillyZip.get_zipfile(zip_path)
+        data = zfile.read(path_img)
+        return data
 
