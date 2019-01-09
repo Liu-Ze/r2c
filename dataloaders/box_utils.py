@@ -6,13 +6,18 @@ import warnings
 from torchvision.datasets.folder import default_loader
 from torchvision.transforms import functional
 from config import USE_IMAGENET_PRETRAINED
-
+from . import  phillyzip
+import cv2
 
 ##### Image
 def load_image(img_fn):
     """Load the specified image and return a [H,W,3] Numpy array.
     """
-    return default_loader(img_fn)
+    import ipdb
+    ipdb.set_trace()
+    if 'zip@' in img_fn:
+        im = phillyzip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+    return im
     # # Load image
     # image = skimage.io.imread(img_fn)
     # # If grayscale. Convert to RGB for consistency.
