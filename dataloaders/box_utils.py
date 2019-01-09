@@ -14,10 +14,8 @@ from PIL import Image
 def load_image(img_fn):
     """Load the specified image and return a [H,W,3] Numpy array.
     """
-    print(img_fn)
     if 'zip@' in img_fn:
         im = PhillyZip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
-        print("img:", im)
         return im
     else:
         return default_loader(img_fn)
