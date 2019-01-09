@@ -2,4 +2,4 @@ USE_IMAGENET_PRETRAINED = True # otherwise use detectron, but that doesnt seem t
 
 # Change these to match where your annotations and images are
 VCR_IMAGES_DIR = '/home/rowan/datasets2/vswag'
-VCR_ANNOTS_DIR = '/home/rowan/code/vswagmodels/data'
+VCR_ANNOTS_DIR = 'data'
