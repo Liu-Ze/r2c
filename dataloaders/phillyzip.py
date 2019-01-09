@@ -26,7 +26,7 @@ class PhillyZip(object):
     def split_zip_style_path(path):
         # pos_at = path.index('@')
         # find the last '@' in the path, instead of the first '@', since the first '@' may be philly auto-unzip folder
-        pos_at = len(path) - 1 - path[::-1].index('@')
+        pos_at = path.index('@')
         if pos_at == len(path):
             print("character '@' is not found from the given path '%s'" % (path))
             assert 0
