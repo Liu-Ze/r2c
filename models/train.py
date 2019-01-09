@@ -1,6 +1,8 @@
 """
 Training script. Should be pretty adaptable to whatever.
 """
+import _init_paths
+
 import argparse
 import os
 import shutil
