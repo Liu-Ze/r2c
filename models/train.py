@@ -59,6 +59,8 @@ parser.add_argument(
     action='store_true',
 )
 
+import ipdb
+ipdb.set_trace()
 args = parser.parse_args()
 
 params = Params.from_file(args.params)
