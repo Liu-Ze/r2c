@@ -17,6 +17,7 @@ from torch.utils.data import Dataset
 from dataloaders.box_utils import load_image, resize_image, to_tensor_and_normalize
 from dataloaders.mask_utils import make_mask
 from dataloaders.bert_field import BertField
+from dataloaders.phillyzip import PhillyZip
 import h5py
 from copy import deepcopy
 from config import VCR_IMAGES_DIR, VCR_ANNOTS_DIR
@@ -208,8 +209,8 @@ class VCR(Dataset):
 
         ###################################################################
         # Load boxes.
-        with open(os.path.join(VCR_IMAGES_DIR, item['metadata_fn']), 'r') as f:
-            metadata = json.load(f)
+        f = PhillyZip.read(os.path.join(VCR_IMAGES_DIR, item['metadata_fn']))
+        metadata = json.loads(f.decode('utf-8'))
 
         #[nobj, 14, 14]
         segms = np.stack([make_mask(mask_size=14, box=metadata['boxes'][i], polygons_list=metadata['segms'][i])
