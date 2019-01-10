@@ -7,8 +7,6 @@ from torchvision.datasets.folder import default_loader
 from torchvision.transforms import functional
 from config import USE_IMAGENET_PRETRAINED
 from .phillyzip import PhillyZip
-import cv2
-from PIL import Image
 
 ##### Image
 def load_image(img_fn):
