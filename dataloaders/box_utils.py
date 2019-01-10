@@ -15,7 +15,7 @@ def load_image(img_fn):
     """Load the specified image and return a [H,W,3] Numpy array.
     """
     if 'zip@' in img_fn:
-        im = PhillyZip.imread(img_fn, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        im = PhillyZip.imread(img_fn).convert('RGB')
         return im
     else:
         return default_loader(img_fn)
