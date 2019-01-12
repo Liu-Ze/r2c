@@ -107,6 +107,8 @@ class SimpleDetector(nn.Module):
         :param box_mask: [batch_size, max_num_objects] Mask for whether or not each box is OK
         :return: object reps [batch_size, max_num_objects, dim]
         """
+        import ipdb
+        ipdb.set_trace()
         # [batch_size, 2048, im_height // 32, im_width // 32
         img_feats = self.backbone(images)
         box_inds = box_mask.nonzero()
