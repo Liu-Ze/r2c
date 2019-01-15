@@ -140,8 +140,6 @@ class AttentionQA(Model):
         """
         # Trim off boxes that are too long. this is an issue b/c dataparallel, it'll pad more zeros that are
         # not needed
-        import ipdb
-        ipdb.set_trace()
         max_len = int(box_mask.sum(1).max().item())
         objects = objects[:, :max_len]
         box_mask = box_mask[:, :max_len]
