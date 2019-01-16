@@ -11,4 +11,4 @@ sudo opt/conda/bin/python -m spacy download en_core_web_sm
 
 
 # this one is optional but it should help make things faster
-sudo /opt/conda/bin/pip uninstall pillow && CC="cc -mavx2" sudp /opt/conda/bin/pip install -U --force-reinstall pillow-simd
+sudo /opt/conda/bin/pip uninstall pillow && CC="cc -mavx2" sudo /opt/conda/bin/pip install -U --force-reinstall pillow-simd
