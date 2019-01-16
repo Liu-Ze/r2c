@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 sudo /opt/conda/bin/conda install numpy pyyaml setuptools cmake cffi tqdm pyyaml scipy ipython mkl mkl-include cython typing h5py pandas nltk spacy numpydoc scikit-learn jpeg
-sudo /opt/conda/bin/conda install pytorch -c pytorch
+
 sudo /opt/conda/bin/pip install git+git://github.com/pytorch/vision.git@24577864e92b72f7066e1ed16e978e873e19d13d
 sudo /opt/conda/bin/pip install -r allennlp-requirements.txt
 sudo /opt/conda/bin/pip install --no-deps allennlp==0.8.0
