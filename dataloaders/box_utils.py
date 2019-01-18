@@ -70,7 +70,8 @@ def resize_image(image, desired_width=768, desired_height=384, random_pad=False)
 
 if USE_IMAGENET_PRETRAINED:
     def to_tensor_and_normalize(image):
-        return functional.normalize(functional.to_tensor(image), mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+        tensor255 = functional.to_tensor(image) * 255
+        return functional.normalize(tensor255, mean=(66.8884, 59.7040, 54.4269), std=(58.2740, 55.3097, 54.0018))
 else:
     # For COCO pretrained
     def to_tensor_and_normalize(image):
