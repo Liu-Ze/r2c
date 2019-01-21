@@ -17,7 +17,7 @@ from allennlp.training.optimizers import Optimizer
 from torch.nn import DataParallel
 from torch.nn.modules import BatchNorm2d
 from tqdm import tqdm
-import torch.optim as optim
+
 from dataloaders.vcr import VCR, VCRLoader
 from utils.pytorch_misc import time_batch, save_checkpoint, clip_grad_norm, \
     restore_checkpoint, print_para, restore_best_checkpoint
@@ -28,7 +28,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s
 # This is needed to make the imports work
 from allennlp.models import Model
 import models
-from utils.lr_scheduler import WarmupMultiStepLR
+
 #################################
 #################################
 ######## Data loading stuff
@@ -65,7 +65,8 @@ params = Params.from_file(args.params)
 train, val, test = VCR.splits(mode='rationale' if args.rationale else 'answer',
                               embs_to_load=params['dataset_reader'].get('embs', 'bert_da'),
                               only_use_relevant_dets=params['dataset_reader'].get('only_use_relevant_dets', True))
-NUM_GPUS = torch.cuda.device_count()
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+NUM_GPUS = 1
 NUM_CPUS = multiprocessing.cpu_count()
 if NUM_GPUS == 0:
     raise ValueError("you need gpus!")
@@ -94,31 +95,21 @@ for submodule in model.detector.backbone.modules():
         p.requires_grad = False
 
 model = DataParallel(model).cuda() if NUM_GPUS > 1 else model.cuda()
-optimizer = optim.SGD(model.parameters(),
-                              lr=0.0002 * NUM_GPUS,
-                              momentum=0.9,
-                              weight_decay=0.0001)
+optimizer = Optimizer.from_params([x for x in model.named_parameters() if x[1].requires_grad],
+                                  params['trainer']['optimizer'])
 
 lr_scheduler_params = params['trainer'].pop("learning_rate_scheduler", None)
 scheduler = LearningRateScheduler.from_params(optimizer, lr_scheduler_params) if lr_scheduler_params else None
 
-lr_epoch = [14.0,18.0]
-lr_epoch_diff = [epoch - 0 for epoch in lr_epoch if epoch > 0]
-lr = 0.0002 * NUM_GPUS * (0.1 ** (len(lr_epoch) - len(lr_epoch_diff)))
-lr_iters = [int(epoch * len(train_loader)) for epoch in lr_epoch_diff]
-print('lr', lr, 'lr_epoch_diff', lr_epoch_diff, 'lr_iters', lr_iters)
-lr_scheduler = WarmupMultiStepLR(optimizer, milestones=lr_iters, gamma=0.1,
-                                     warmup_factor= 0.00006667/ 0.0002,
-                                     warmup_iters=-1,
-                                     warmup_method='linear',
-                                     last_epoch=0*len(train_loader) - 1)
-
-
-
-print("Making directories")
-os.makedirs(args.folder, exist_ok=True)
-start_epoch, val_metric_per_epoch = 0, []
-shutil.copy2(args.params, args.folder)
+if os.path.exists(args.folder):
+    print("Found folder! restoring", flush=True)
+    start_epoch, val_metric_per_epoch = restore_checkpoint(model, optimizer, serialization_dir=args.folder,
+                                                           learning_rate_scheduler=scheduler)
+else:
+    print("Making directories")
+    os.makedirs(args.folder, exist_ok=True)
+    start_epoch, val_metric_per_epoch = 0, []
+    shutil.copy2(args.params, args.folder)
 
 param_shapes = print_para(model)
 num_batches = 0
@@ -134,11 +125,11 @@ for epoch_num in range(start_epoch, params['trainer']['num_epochs'] + start_epoc
         loss.backward()
 
         num_batches += 1
-        if lr_scheduler:
-            lr_scheduler.step()
+        if scheduler:
+            scheduler.step_batch(num_batches)
 
         norms.append(
-            clip_grad_norm(model.named_parameters(), max_norm=params['trainer']['grad_norm'], clip=False, verbose=False)
+            clip_grad_norm(model.named_parameters(), max_norm=params['trainer']['grad_norm'], clip=True, verbose=False)
         )
         optimizer.step()
 
@@ -178,8 +169,7 @@ for epoch_num in range(start_epoch, params['trainer']['num_epochs'] + start_epoc
 
     val_metric_per_epoch.append(float(np.mean(val_labels == val_probs.argmax(1))))
     if scheduler:
-        # scheduler.step(val_metric_per_epoch[-1], epoch_num)
-        pass
+        scheduler.step(val_metric_per_epoch[-1], epoch_num)
 
     print("Val epoch {} has acc {:.3f} and loss {:.3f}".format(epoch_num, val_metric_per_epoch[-1], val_loss_avg),
           flush=True)
