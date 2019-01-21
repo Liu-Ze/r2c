@@ -95,7 +95,7 @@ for submodule in model.detector.backbone.modules():
 
 model = DataParallel(model).cuda() if NUM_GPUS > 1 else model.cuda()
 optimizer = optim.SGD(model.parameters(),
-                              lr=0.0002 * NUM_GPUS * 3,
+                              lr=0.0002 * NUM_GPUS,
                               momentum=0.9,
                               weight_decay=0.0001)
 
